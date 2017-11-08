@@ -1,0 +1,3 @@
+defmodule CamGadget do
+  
+end
