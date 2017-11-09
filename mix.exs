@@ -22,7 +22,7 @@ defmodule CamGadget.Mixfile do
      start_permanent: Mix.env == :prod,
      aliases: aliases(@target),
      deps: deps()
-    ] ++ make_or_prebuilt()
+    ]
   end
 
   # Configuration for the OTP application.
@@ -70,6 +70,7 @@ defmodule CamGadget.Mixfile do
       ] ++ system(target)
   end
 
+  def system("rpi0_with_opencv"), do: [{:nerves_system_rpi0_with_opencv, ">= 0.0.0", runtime: false, path: "../nerves_system_rpi0_with_opencv"}]
   def system("rpi"), do: [{:nerves_system_rpi, ">= 0.0.0", runtime: false}]
   def system("rpi0"), do: [{:nerves_system_rpi0, ">= 0.0.0", runtime: false}]
   def system("rpi2"), do: [{:nerves_system_rpi2, ">= 0.0.0", runtime: false}]
@@ -85,73 +86,6 @@ defmodule CamGadget.Mixfile do
   def aliases(_target) do
     ["deps.precompile": ["nerves.precompile", "deps.precompile"],
      "deps.loadpaths":  ["deps.loadpaths", "nerves.loadpaths"]]
-  end
-
-  # If the platform doesn't have make installed, try to
-  # use a prebuilt version of the port binary
-  defp make_or_prebuilt() do
-    if run_make?() do
-      [
-        compilers: [:elixir_make] ++ Mix.compilers(),
-        make_executable: make_executable(),
-        make_makefile: "Makefile",
-        make_error_message: make_error_message(),
-        make_clean: ["clean"]
-      ]
-    else
-      [aliases: [compile: ["compile", &copy_prebuilt/1]]]
-    end
-  end
-
-  defp run_make?() do
-    case :os.type() do
-      {:win32, _} ->
-        # If mingw32-make isn't installed, then try prebuilt version
-        location = System.find_executable(make_executable())
-        location != nil
-
-      _ ->
-        # Non-windows platforms should have make and gcc if they
-        # have Elixir.
-        true
-    end
-  end
-
-  defp make_executable() do
-    case :os.type() do
-      {:win32, _} ->
-        "mingw32-make"
-
-      _ ->
-        :default
-    end
-  end
-
-  @windows_mingw_error_msg """
-  You may need to install mingw-w64 and make sure that it is in your PATH. Test this by
-  running `gcc --version` on the command line.
-  If you do not have mingw-w64, one method to install it is by using
-  Chocolatey. See http://chocolatey.org to install Chocolatey and run the
-  following from and command prompt with administrative privileges:
-  `choco install mingw`
-  """
-
-  defp make_error_message() do
-    case :os.type() do
-      {:win32, _} -> @windows_mingw_error_msg
-      _ -> :default
-    end
-  end
-
-  defp copy_prebuilt(_) do
-    case :os.type() do
-      {:win32, _} ->
-        Mix.shell().info("Copying prebuilt port binary")
-        File.cp("prebuilt/nerves_uart.exe", "priv/nerves_uart.exe")
-
-      _ ->
-        Mix.raise("Couldn't find 'make' and no prebuilt port binary to use.")
-    end
   end
 
 end
